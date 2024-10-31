@@ -1,0 +1,36 @@
+local QBCore = exports['qb-core']:GetCoreObject()
+Config = Config or {}
+
+local inhalerCooldown = {}
+
+QBCore.Functions.CreateUseableItem(Config.ItemName, function(source)
+    local player = QBCore.Functions.GetPlayer(source)
+    local currentTime = os.time()
+
+    -- Check if the player is on cooldown
+    if inhalerCooldown[source] and (currentTime - inhalerCooldown[source] < Config.CooldownDuration) then
+        TriggerClientEvent("QBCore:Notify", source, Config.Messages.Cooldown, "error")
+
+        if Config.Debug then
+            print("Debug: Player " .. source .. " attempted to use " .. Config.ItemName .. " but is on cooldown.")
+        end
+
+        return
+    end
+
+    -- Update last usage time
+    inhalerCooldown[source] = currentTime
+
+    if player then
+        if Config.Debug then
+            print("Debug: " .. Config.ItemName .. " used by player " .. source .. ".")
+        end
+
+        -- Trigger the stamina boost event on the client side
+        TriggerClientEvent("custom:client:staminaBoost", source)
+
+        -- Remove one unit of the item from inventory
+        player.Functions.RemoveItem(Config.ItemName, 1)
+        TriggerClientEvent("inventory:client:ItemBox", source, QBCore.Shared.Items[Config.ItemName], "remove")
+    end
+end)
